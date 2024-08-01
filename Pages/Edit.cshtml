@@ -1,0 +1,202 @@
+﻿    @page
+    @using Video
+    @model Video.Pages.EditModel
+    @{
+        ViewData["Title"] = "管理画面";
+    }
+
+    <style>
+        table tr:nth-child(odd) {
+            background-color: #f2f2f2;
+        }
+
+        table tr:nth-child(even) {
+            background-color: #ffffff;
+        }
+
+        th, td {
+            padding: 10px;
+        }
+        .highlight {
+            background-color: #ff6666;
+        }
+
+        tr.highlight > td {
+            background-color: #ffaaaa;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .textbox-large {
+            width: 500px;
+        }
+
+        .menu {
+            cursor: pointer;
+            margin: 20px;
+            font-size: 18px;
+        }
+
+        .menu-items {
+            display: none;
+            margin-left: 20px;
+        }
+
+        .menu-active .menu-items {
+            display: block;
+        }
+
+        #progressBar {
+            width: 100%;
+            background-color: #f3f3f3;
+        }
+
+        #progressBar div {
+            height: 30px;
+            width: 0%;
+            background-color: #4caf50;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+        }
+    </style>
+
+    <script src="/js/editor.js"></script>
+
+    <h3>管理画面</h3>
+    <div id="passwordPopup">
+        Password:<input type="password" id="change-password" name="password" required />
+        <button onclick="submitPassword()">送信</button>
+    </div>
+
+    <div id="content" class="hidden">
+        <div class="menu-container">
+            <div class="menu">
+                <div id="menu-title-about" class="menu-title" onclick="readHTML()">→ サイト説明文の変更</div>
+                <div class="menu-items" id="menu-item-about">
+                    <div>
+                        見出し：<input type="text" size="50" id="headlineText" />
+                    </div>
+                    <div>本文：
+                        <textarea style="width:1000px; height:500px;" id="htmlSource"></textarea>
+                    </div>
+                    <div>
+                        <button onclick="previewHTML()">プレビュー</button>
+                    </div>
+                    <div id="preview-box" style="display:none">
+                        <div id="html-preview" style="width:1000px;border:1"></div>
+                        <button onclick="editHTML()">この内容で更新</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="menu">
+                <div id="menu-title-password" class="menu-title">→ 管理画面のパスワード変更</div>
+                <div class="menu-items" id="menu-item-password">
+                    <div><input type="password" id="new-password" size="10" /> <button onclick="changePassword()">パスワードを変更</button></div>
+                    <div id="password-result"></div>
+                </div>
+            </div>
+
+            <div class="menu">
+                <div id="menu-title-main" class="menu-title">→ 表示項目設定</div>
+                    <div class="menu-items" id="menu-item-main">
+                        <table id="edit-table">
+                            <tr><th>連番</th><th>動画名</th><th>表示順</th><th>再生回数</th><th>表示/非表示</th></tr>
+                            @for (var i = 0; i < Model.Editable_Media_Array.Length; i++) {
+                                <tr>
+                                    <td>@i</td>
+                                    <td><input type="text" class="textbox-large" value="@Model.Editable_Media_Array[i].Title" /></td>
+                                    <td>
+                                        <select class="prioritySelector" name="priority_@i">
+                                            @for (var j = 0; j < Model.Editable_Media_Array.Length; j++)
+                                                if (j == @Model.Editable_Media_Array[i].Priority) {
+                                                    <option value="@j" selected>@j</option>
+                                                } else {
+                                                    <option value="@j">@j</option>
+                                                }
+                                        </select>
+                                    </td>
+                                    <td>@Model.Editable_Media_Array[i].Count</td>
+                                    <td>
+                                        <select class="isShowSelector" name="isShow_@i">
+                                            @if (Model.Editable_Media_Array[i].IsShow) {
+                                                <option value="1" selected>表示</option>
+                                                <option value="0">非表示</option>
+                                            } else {
+                                                <option value="1">表示</option>
+                                                <option value="0" selected>非表示</option>
+                                            }
+                                        </select>
+                                    </td>
+                                    <td style="display:none" class="nameSelector" name="@Model.Editable_Media_Array[i].Name">@Model.Editable_Media_Array[i].Name</td>
+                                </tr>
+                            }
+                        </table>
+                        <div id="modified" style="display:none">
+                            <h3>以下の内容に変更します。</h3>
+                            <table id="updated-table"></table>
+                            <button id="apply-button">変更を適用</button>
+                            <button id="back-button">編集に戻る</button>
+                            <button id="reset-b-button">初期状態に戻す</button>
+                        </div>
+                        <button id="confirm-button">変更を確認</button>
+                        <button id="reset-a-button">初期状態に戻す</button>
+                    </div>
+                </div>
+                <div class="menu">
+                    <div id="menu-title-upload" class="menu-title">→ 動画をアップロード</div>
+                    <div class="menu-items" id="menu-item-upload">
+                        <form id="uploadForm">
+                            <table width="100%">
+                                <tr>
+                                    <td colspan="2">
+                                        <label for="videoFile">動画ファイルを選択:</label>
+                                        <input type="file" id="videoFile" name="videoFile" accept="video/*">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <label for="thumbFile">サムネイル画像を選択:</label>
+                                        <input type="file" id="thumbFile" name="thumbFile" accept="image/*">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <label for="baseFileName">識別名称:</label>
+                                        <div id="baseFileName" class="editable-div" contenteditable="true" style="border:solid;width:300px"></div>
+                                    </td>
+                                    <td><button type="submit">アップロードを実行</button></td>
+                                </tr>
+                                <tr><td colspan="2"><div id="progressBar"></div></td></tr>
+                            </table>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // 各メニューのトグル動作の実装
+            const toggleMenu = (menuTitleId, menuItemsId) => {
+                const menuItems = document.getElementById(menuItemsId);
+                const menuTitle = document.getElementById(menuTitleId);
+
+                menuTitle.addEventListener('click', function () {
+                    if (menuItems.style.display === "none" || !menuItems.style.display) {
+                        menuItems.style.display = "block";
+                        menuTitle.textContent = menuTitle.textContent.replace("→", "↓");
+                    } else {
+                        menuItems.style.display = "none";
+                        menuTitle.textContent = menuTitle.textContent.replace("↓", "→");
+                    }
+                });
+            };
+
+            toggleMenu("menu-title-about", "menu-item-about");
+            toggleMenu("menu-title-password", "menu-item-password");
+            toggleMenu("menu-title-main", "menu-item-main");
+            toggleMenu("menu-title-upload", "menu-item-upload");
+        </script>

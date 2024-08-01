@@ -1,0 +1,107 @@
+﻿@page
+@model Video.Pages.IndexModel
+@using Video.Controllers
+@{
+    ViewData["Title"] = "シャル坊 - ボカロ作品";
+}
+            <style>
+                body {
+                    background-image: url("@Model.Image_Dic["wallpaper"]");
+                    background-position: center;
+                    background-repeat: repeat-y;
+                }
+            </style>
+            <div class="container mt-5">
+                <div align="center"><img src="@Model.Image_Dic["titleHalf"]" alt="シャル坊の曲"></div>
+                <div class="thumbnail-container">
+                    @foreach (var kv in Model.Title_Dic) {
+                        <div class="col-12 col-md-3 mb-4">
+                            <div class="video-item"
+                            @if (Model.Video_Dic.ContainsKey(kv.Key)) {
+                                <text>data-video-src="/api/Video/@kv.Key"</text>
+                            }
+                            data-video-name="@kv.Key">
+                            <img src="@Model.Image_Dic[kv.Key]" class="thumbnail" alt="@kv.Value" />
+                            @if (!Model.Video_Dic.ContainsKey(kv.Key)) {
+                                        <div class="coming-soon-overlay">準備中</div>
+                            }
+                                <div class="board" style="width: 240px; padding-left: 10px;">
+                                    <div class="video-title" id="video-title-@kv.Key">@Html.Raw(kv.Value.Replace("/", "<br>"))</div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <!-- モーダル -->
+            <div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="videoModalLabel"></h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <video id="modalVideo" width="100%" controls preload="auto" autoplay="autoplay">
+                                <source id="modalSource" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                            <p id="playCount">再生回数: <span id="playCountNumber">0</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+            <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+            <script>
+                $(document).ready(function () {
+                    $('.video-item').click(function () {
+                        var videoSrc = $(this).data('video-src');
+                        var videoName = $(this).data('video-name');
+                        var modalVideo = document.getElementById('modalVideo');
+                        var modalSource = document.getElementById('modalSource');
+                        var playCountNumber = document.getElementById('playCountNumber');
+                        var videoTitle = $(this).find(".video-title").text().replace("<br>","/")
+                        var videoModalLabel = document.getElementById('videoModalLabel');
+
+                        videoModalLabel.textContent = videoTitle;
+                        modalSource.setAttribute('src', videoSrc);
+                        modalVideo.setAttribute('data-video-name', videoName);
+                        modalVideo.load();
+
+                        fetch(`/api/Count/${videoName}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                playCountNumber.textContent = data.playCount;
+                            });
+
+                        $('#videoModal').modal('show');
+                    });
+
+                    $('#videoModal').on('shown.bs.modal', function () {
+                        var modalVideo = document.getElementById('modalVideo');
+                        modalVideo.play();
+
+                        var videoName = modalVideo.getAttribute('data-video-name');
+
+                        modalVideo.addEventListener('play', function () {
+                            fetch(`/api/IncrementCount/${videoName}`);
+                        }, { once: true });
+                    });
+
+                    $('.close').click(function () {
+                        var modalVideo = document.getElementById('modalVideo');
+                        var modalSource = document.getElementById('modalSource');
+
+                        modalVideo.pause();
+                        modalSource.removeAttribute('src');
+                        modalVideo.load();
+
+                        $('#videoModal').modal('hide');
+                    });
+                });
+            </script>

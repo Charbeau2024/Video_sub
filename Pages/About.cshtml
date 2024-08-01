@@ -1,0 +1,9 @@
+﻿@page
+@model Video.Pages.AboutModel
+@{
+    ViewData["Title"] = "このサイトについて";
+}
+
+@foreach (var line in Video.Pages.AboutModel.Html_Data) {
+    @Html.Raw(line)
+}
