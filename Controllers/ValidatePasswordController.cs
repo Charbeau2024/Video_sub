@@ -24,7 +24,11 @@
             var encryptedPassword = cryptographHelper.Encode(request.Password);
             var filesPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "files");
             var filePath = Path.Combine(filesPath, ".pw");
-            
+
+            if (!System.IO.File.Exists(filePath)) {
+                System.IO.File.WriteAllTextAsync(filePath, encryptedPassword, Encoding.UTF8).GetAwaiter().GetResult();
+            }
+
             var storedPassword = System.IO.File.ReadAllTextAsync(filePath, Encoding.UTF8).GetAwaiter().GetResult();
 
             if (encryptedPassword == storedPassword) {

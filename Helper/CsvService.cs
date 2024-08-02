@@ -3,8 +3,10 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Text;
     using Microsoft.AspNetCore.Hosting;
+    using Video.Pages;
 
     public class CsvService
     {
@@ -34,8 +36,7 @@
             using (var stream = new StreamReader(filePath)) {
                 while (!stream.EndOfStream) {
                     var line = stream.ReadLine();
-
-                    if (line is not null) {
+                    if (!(line is null || line.Trim() == string.Empty)) {
                         var array = line.Split(',');
                         var data = new MediaData {
                             Id = int.Parse(array[0]),
@@ -52,6 +53,32 @@
                     }
                 }
             }
+
+            // media.csv が初期状態などで空の場合は、ストレージにアップロード済みの動画ファイル一覧を元に動画情報リストを書き出す
+            if (!retval.Any()) {
+                new BlobService();
+                var videoArray = BlobService.GetVideoNameListFromStorageAsync(BlobService.Blob_Service_Client).GetAwaiter().GetResult().ToArray();
+
+                for(var i = 0; i < videoArray.Length; i++) {
+                    var data = new MediaData {
+                        Id = i,
+                        Name = videoArray[i],
+                        Title =string.Empty,
+                        Type = 0,
+                        Priority = i,
+                        PublishDate = DateTime.UtcNow.AddHours(9),
+                        Count = 0,
+                        Deleted = false,
+                        IsShow = false,
+                    };
+                    retval.Add(data);
+                }
+
+                ExportCsv(retval);
+                IndexModel.Media_Data_List = retval;
+                return retval;
+            }
+
 
             return retval;
         }

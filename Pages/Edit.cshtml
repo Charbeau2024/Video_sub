@@ -104,7 +104,7 @@
                 <div id="menu-title-main" class="menu-title">→ 表示項目設定</div>
                     <div class="menu-items" id="menu-item-main">
                         <table id="edit-table">
-                            <tr><th>連番</th><th>動画名</th><th>表示順</th><th>再生回数</th><th>表示/非表示</th></tr>
+                            <tr><th>連番</th><th>動画名</th><th>表示順</th><th>再生回数</th><th>表示/非表示</th><th>ファイル名</th></tr>
                             @for (var i = 0; i < Model.Editable_Media_Array.Length; i++) {
                                 <tr>
                                     <td>@i</td>
@@ -131,7 +131,7 @@
                                             }
                                         </select>
                                     </td>
-                                    <td style="display:none" class="nameSelector" name="@Model.Editable_Media_Array[i].Name">@Model.Editable_Media_Array[i].Name</td>
+                                    <td class="nameSelector" name="@Model.Editable_Media_Array[i].Name">@Model.Editable_Media_Array[i].Name</td>
                                 </tr>
                             }
                         </table>
